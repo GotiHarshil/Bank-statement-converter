@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { convertStatement } from '@/lib/convert';
-import { FIXTURE_SPECS } from '@/scripts/lib/fixture-specs';
+import { FIXTURE_SPECS } from '@/scripts/lib/fixture-specs'; 
 
 /**
  * One end-to-end test per shipped bank template.

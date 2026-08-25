@@ -1,0 +1,316 @@
+{
+  "bankName": "IDFC FIRST Bank",
+  "templateId": "idfc-first-savings-v1",
+  "openingBalance": 278233,
+  "closingBalance": 2248058.51,
+  "totalDebits": 592030.82,
+  "totalCredits": 2561856.33,
+  "transactions": [
+    {
+      "date": "2024-04-03",
+      "valueDate": "2024-04-03",
+      "narration": "POS 4571XXXXXXXX8821 RELIANCE RETAIL LTD MUMBAI",
+      "refNo": "427789260",
+      "debit": 25617.71,
+      "credit": null,
+      "balance": 252615.29
+    },
+    {
+      "date": "2024-04-03",
+      "valueDate": "2024-04-03",
+      "narration": "NEFT DR-ICIC0000456-RAMESH KUMAR-RENT APRIL 2024",
+      "refNo": "224775711",
+      "debit": 56434.22,
+      "credit": null,
+      "balance": 196181.07
+    },
+    {
+      "date": "2024-04-05",
+      "valueDate": "2024-04-05",
+      "narration": "POS 4571XXXXXXXX8821 RELIANCE RETAIL LTD MUMBAI",
+      "refNo": "598045137",
+      "debit": 50633.8,
+      "credit": null,
+      "balance": 145547.27
+    },
+    {
+      "date": "2024-04-05",
+      "valueDate": "2024-04-05",
+      "narration": "BILLPAY DR-RELIANCE JIO-9876543210-AUTOPAY",
+      "refNo": "705983317",
+      "debit": 53856.88,
+      "credit": null,
+      "balance": 91690.39
+    },
+    {
+      "date": "2024-04-05",
+      "valueDate": "2024-04-06",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "528769059",
+      "debit": null,
+      "credit": 90612.72,
+      "balance": 182303.11
+    },
+    {
+      "date": "2024-04-07",
+      "valueDate": "2024-04-07",
+      "narration": "UPI/412233445566/Payment from/9876543210@ybl/Settlement",
+      "refNo": "622156908",
+      "debit": null,
+      "credit": 140742.54,
+      "balance": 323045.65
+    },
+    {
+      "date": "2024-04-07",
+      "valueDate": "2024-04-07",
+      "narration": "RTGS CR HDFCR52024040112345 SHREE ENTERPRISES PVT LTD INVOICE SETTLEMENT",
+      "refNo": "530099773",
+      "debit": null,
+      "credit": 40863.18,
+      "balance": 363908.83
+    },
+    {
+      "date": "2024-04-09",
+      "valueDate": "2024-04-09",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "691135183",
+      "debit": null,
+      "credit": 171636.85,
+      "balance": 535545.68
+    },
+    {
+      "date": "2024-04-12",
+      "valueDate": "2024-04-13",
+      "narration": "ATM WDL-ATM CASH-HDFC ATM BANDRA WEST MUMBAI 400050",
+      "refNo": "103965081",
+      "debit": 41271.5,
+      "credit": null,
+      "balance": 494274.18
+    },
+    {
+      "date": "2024-04-12",
+      "valueDate": "2024-04-13",
+      "narration": "INT.PD:01-01-2024 to 31-03-2024",
+      "refNo": "480578519",
+      "debit": null,
+      "credit": 145820.03,
+      "balance": 640094.21
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-14",
+      "narration": "CASH DEPOSIT AT BRANCH ANDHERI EAST MUMBAI",
+      "refNo": "851182651",
+      "debit": null,
+      "credit": 202895.02,
+      "balance": 842989.23
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "NEFT DR-ICIC0000456-RAMESH KUMAR-RENT APRIL 2024",
+      "refNo": "964310971",
+      "debit": 17244.74,
+      "credit": null,
+      "balance": 825744.49
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "BILLPAY DR-RELIANCE JIO-9876543210-AUTOPAY",
+      "refNo": "474017706",
+      "debit": 38397.19,
+      "credit": null,
+      "balance": 787347.3
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "ATM WDL-ATM CASH-HDFC ATM BANDRA WEST MUMBAI 400050",
+      "refNo": "302119893",
+      "debit": 56064.34,
+      "credit": null,
+      "balance": 731282.96
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-14",
+      "narration": "UPI/412233445566/Payment from/9876543210@ybl/Settlement",
+      "refNo": "131935382",
+      "debit": null,
+      "credit": 214289.03,
+      "balance": 945571.99
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "519108646",
+      "debit": null,
+      "credit": 139943.76,
+      "balance": 1085515.75
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "IMPS-408912345678-MEHTA AND SONS-HDFC-PAYMENT",
+      "refNo": "750115666",
+      "debit": null,
+      "credit": 204843.53,
+      "balance": 1290359.28
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "296085522",
+      "debit": null,
+      "credit": 7372.44,
+      "balance": 1297731.72
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "UPI/DR/412299887766/SWIGGY/YESB/swiggy@ybl/Food Order",
+      "refNo": "252810547",
+      "debit": 16735.26,
+      "credit": null,
+      "balance": 1280996.46
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "IMPS-408912345678-MEHTA AND SONS-HDFC-PAYMENT",
+      "refNo": "375133316",
+      "debit": null,
+      "credit": 239752.31,
+      "balance": 1520748.77
+    },
+    {
+      "date": "2024-04-13",
+      "valueDate": "2024-04-13",
+      "narration": "GST PAYMENT CPIN 24040012345678 CGST SGST APRIL 2024",
+      "refNo": "361054143",
+      "debit": 21069.87,
+      "credit": null,
+      "balance": 1499678.9
+    },
+    {
+      "date": "2024-04-16",
+      "valueDate": "2024-04-16",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "176974101",
+      "debit": null,
+      "credit": 198965.54,
+      "balance": 1698644.44
+    },
+    {
+      "date": "2024-04-19",
+      "valueDate": "2024-04-19",
+      "narration": "NEFT DR-ICIC0000456-RAMESH KUMAR-RENT APRIL 2024",
+      "refNo": "115874284",
+      "debit": 31517,
+      "credit": null,
+      "balance": 1667127.44
+    },
+    {
+      "date": "2024-04-21",
+      "valueDate": "2024-04-21",
+      "narration": "GST PAYMENT CPIN 24040012345678 CGST SGST APRIL 2024",
+      "refNo": "867957570",
+      "debit": 48959.54,
+      "credit": null,
+      "balance": 1618167.9
+    },
+    {
+      "date": "2024-04-22",
+      "valueDate": "2024-04-23",
+      "narration": "EMI DEBIT HOME LOAN ACCOUNT 50200012345678 INSTALMENT 42",
+      "refNo": "882321810",
+      "debit": 54206.9,
+      "credit": null,
+      "balance": 1563961
+    },
+    {
+      "date": "2024-04-25",
+      "valueDate": "2024-04-26",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "276631684",
+      "debit": null,
+      "credit": 9707.55,
+      "balance": 1573668.55
+    },
+    {
+      "date": "2024-04-25",
+      "valueDate": "2024-04-26",
+      "narration": "CASH DEPOSIT AT BRANCH ANDHERI EAST MUMBAI",
+      "refNo": "648993447",
+      "debit": null,
+      "credit": 208774.04,
+      "balance": 1782442.59
+    },
+    {
+      "date": "2024-04-27",
+      "valueDate": "2024-04-27",
+      "narration": "UPI/DR/412299887766/SWIGGY/YESB/swiggy@ybl/Food Order",
+      "refNo": "341156411",
+      "debit": 41241.72,
+      "credit": null,
+      "balance": 1741200.87
+    },
+    {
+      "date": "2024-04-28",
+      "valueDate": "2024-04-28",
+      "narration": "NEFT DR-ICIC0000456-RAMESH KUMAR-RENT APRIL 2024",
+      "refNo": "791773149",
+      "debit": 25650.27,
+      "credit": null,
+      "balance": 1715550.6
+    },
+    {
+      "date": "2024-04-30",
+      "valueDate": "2024-04-30",
+      "narration": "RTGS CR HDFCR52024040112345 SHREE ENTERPRISES PVT LTD INVOICE SETTLEMENT",
+      "refNo": "626355555",
+      "debit": null,
+      "credit": 168069.8,
+      "balance": 1883620.4
+    },
+    {
+      "date": "2024-05-01",
+      "valueDate": "2024-05-01",
+      "narration": "SALARY CREDIT APRIL 2024 EMPLOYEE CODE 88213",
+      "refNo": "866502417",
+      "debit": null,
+      "credit": 172207.69,
+      "balance": 2055828.09
+    },
+    {
+      "date": "2024-05-02",
+      "valueDate": "2024-05-03",
+      "narration": "CASH DEPOSIT AT BRANCH ANDHERI EAST MUMBAI",
+      "refNo": "403639684",
+      "debit": null,
+      "credit": 126058.71,
+      "balance": 2181886.8
+    },
+    {
+      "date": "2024-05-05",
+      "valueDate": "2024-05-05",
+      "narration": "GST PAYMENT CPIN 24040012345678 CGST SGST APRIL 2024",
+      "refNo": "691178170",
+      "debit": 13129.88,
+      "credit": null,
+      "balance": 2168756.92
+    },
+    {
+      "date": "2024-05-05",
+      "valueDate": "2024-05-05",
+      "narration": "CASH DEPOSIT AT BRANCH ANDHERI EAST MUMBAI",
+      "refNo": "751431411",
+      "debit": null,
+      "credit": 79301.59,
+      "balance": 2248058.51
+    }
+  ]
+}

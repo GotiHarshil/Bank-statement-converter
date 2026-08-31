@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Download, Info, RotateCcw } from 'lucide-react';
+import { Download, FileSpreadsheet, Info, RotateCcw, Table2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -114,25 +114,30 @@ export function ReviewPanel({
 
       <IssueBanner validation={validation} />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="problems-first"
-            checked={problemsFirst}
-            onCheckedChange={(v) => setProblemsFirst(v === true)}
-          />
-          <Label htmlFor="problems-first" className="cursor-pointer font-normal">
-            Show rows that failed validation first
-          </Label>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Table2 className="text-muted-foreground size-4" />
+            <h2 className="text-sm font-semibold">Transactions</h2>
+            <label className="ml-3 flex cursor-pointer items-center gap-2">
+              <Checkbox
+                id="problems-first"
+                checked={problemsFirst}
+                onCheckedChange={(v) => setProblemsFirst(v === true)}
+              />
+              <Label htmlFor="problems-first" className="text-muted-foreground cursor-pointer font-normal">
+                Issues first
+              </Label>
+            </label>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onStartOver}>
+            <RotateCcw className="size-3.5" /> Convert another
+          </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" onClick={onStartOver}>
-            <RotateCcw className="size-4" /> Convert another
-          </Button>
-
+        <div className="bg-muted/40 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
           <div className="flex items-center gap-1.5">
-            <Label htmlFor="export-bank-code" className="text-muted-foreground font-normal">
+            <Label htmlFor="export-bank-code" className="text-muted-foreground font-normal whitespace-nowrap">
               Bank code
             </Label>
             <Input
@@ -142,29 +147,32 @@ export function ReviewPanel({
               placeholder="AXISBB"
               spellCheck={false}
               maxLength={32}
-              className="h-9 w-28 font-mono text-xs"
+              className="h-9 w-28 bg-card font-mono text-xs"
             />
+            <span className="text-muted-foreground hidden text-xs sm:inline">for accounting import</span>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={() => download('ledger-csv')}
-            disabled={downloading !== null || bankCode.trim() === ''}
-            title={bankCode.trim() === '' ? 'Enter a bank code to enable the accounting import' : undefined}
-          >
-            <Download className="size-4" /> {downloading === 'ledger-csv' ? 'Preparing…' : 'Accounting CSV'}
-          </Button>
-          <Button variant="outline" onClick={() => download('csv')} disabled={downloading !== null}>
-            <Download className="size-4" /> {downloading === 'csv' ? 'Preparing…' : 'CSV'}
-          </Button>
-          <Button onClick={() => download('xlsx')} disabled={downloading !== null}>
-            <Download className="size-4" /> {downloading === 'xlsx' ? 'Preparing…' : 'Excel'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => download('ledger-csv')}
+              disabled={downloading !== null || bankCode.trim() === ''}
+              title={bankCode.trim() === '' ? 'Enter a bank code to enable the accounting import' : undefined}
+            >
+              <Download className="size-4" /> {downloading === 'ledger-csv' ? 'Preparing…' : 'Accounting CSV'}
+            </Button>
+            <Button variant="outline" onClick={() => download('csv')} disabled={downloading !== null}>
+              <Download className="size-4" /> {downloading === 'csv' ? 'Preparing…' : 'CSV'}
+            </Button>
+            <Button onClick={() => download('xlsx')} disabled={downloading !== null}>
+              <FileSpreadsheet className="size-4" /> {downloading === 'xlsx' ? 'Preparing…' : 'Excel'}
+            </Button>
+          </div>
         </div>
       </div>
 
       {exportError && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="animate-slide-up">
           <Info className="size-4 shrink-0" />
           <AlertDescription>{exportError}</AlertDescription>
         </Alert>
@@ -178,7 +186,7 @@ export function ReviewPanel({
         highlightedSerial={highlighted}
       />
 
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-center text-xs">
         Click any cell to correct it. Dates accept dd/MM/yyyy; amounts accept 1,23,456.78. The running balance is
         re-checked as soon as you leave the cell.
       </p>

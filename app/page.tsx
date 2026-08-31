@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { FileSpreadsheet, ShieldCheck } from 'lucide-react';
+import { FileSpreadsheet, Landmark, ScanLine, ShieldCheck } from 'lucide-react';
 import { ProcessingPanel } from '@/components/ProcessingPanel';
 import { ReviewPanel } from '@/components/ReviewPanel';
 import { UploadPanel, type UploadSubmission } from '@/components/UploadPanel';
+import { cn } from '@/lib/utils';
 import type { ConvertProgress } from '@/lib/convert';
 import type { ConvertErrorCode, ConvertSuccessBody } from '@/lib/schema';
 
@@ -63,53 +64,85 @@ export default function Page() {
     }
   }
 
+  const wide = stage.name === 'review';
+
   return (
-    <main className="mx-auto w-full max-w-[110rem] px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="bg-primary/10 text-primary rounded-lg p-2">
-            <FileSpreadsheet className="size-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Bank Statement Converter</h1>
-            <p className="text-muted-foreground mt-0.5 text-sm">
-              Turn an Indian bank statement PDF into a verified Excel or CSV file.
-            </p>
-          </div>
-        </div>
-        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-          <ShieldCheck className="size-4" />
-          Processed in memory · never written to disk
-        </p>
-      </header>
-
+    <div className="relative min-h-dvh">
       {stage.name === 'upload' && (
-        <div className="mx-auto max-w-3xl">
-          <UploadPanel
-            onSubmit={convert}
-            {...(stage.errorCode ? { errorCode: stage.errorCode } : {})}
-            {...(stage.errorMessage ? { errorMessage: stage.errorMessage } : {})}
-          />
-        </div>
+        <div className="bg-dot-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[26rem]" aria-hidden />
       )}
 
-      {stage.name === 'processing' && (
-        <div className="mx-auto max-w-3xl">
-          <ProcessingPanel fileName={stage.fileName} progress={stage.progress} />
-        </div>
-      )}
+      <main className={cn('mx-auto w-full px-4 pt-8 pb-16 sm:px-6 lg:px-8', wide ? 'max-w-[110rem]' : 'max-w-4xl')}>
+        <header className={cn('mb-8 flex flex-wrap items-center justify-between gap-4', wide && 'mb-6')}>
+          <a href="/" className="group flex items-center gap-2.5" onClick={() => setStage({ name: 'upload' })}>
+            <div className="from-primary to-primary/70 flex size-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform group-hover:scale-105">
+              <FileSpreadsheet className="size-5" />
+            </div>
+            <span className="text-[0.95rem] font-semibold tracking-tight">StatementConverter</span>
+          </a>
+          <p className="text-muted-foreground hidden items-center gap-1.5 text-xs sm:flex">
+            <ShieldCheck className="size-3.5" />
+            Processed in memory — never written to disk
+          </p>
+        </header>
 
-      {stage.name === 'review' && (
-        <ReviewPanel
-          initialTransactions={stage.result.transactions}
-          meta={stage.result.meta}
-          initialValidation={stage.result.validation}
-          notices={stage.result.notices}
-          initialBankCode={stage.bankCode}
-          onStartOver={() => setStage({ name: 'upload' })}
-        />
-      )}
-    </main>
+        {stage.name === 'upload' && (
+          <div className="animate-fade-in mx-auto max-w-2xl">
+            <div className="mb-10 text-center">
+              <span className="border-border bg-card text-muted-foreground mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-sm">
+                <Landmark className="text-primary size-3.5" />
+                10 Indian banks supported out of the box
+              </span>
+              <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                Bank statements in,
+                <br className="hidden sm:block" /> reconciled spreadsheets out.
+              </h1>
+              <p className="text-muted-foreground mx-auto mt-3 max-w-lg text-balance">
+                Upload a PDF statement and get back a verified Excel or CSV file — every row checked against the
+                running balance before you download anything.
+              </p>
+            </div>
+
+            <UploadPanel
+              onSubmit={convert}
+              {...(stage.errorCode ? { errorCode: stage.errorCode } : {})}
+              {...(stage.errorMessage ? { errorMessage: stage.errorMessage } : {})}
+            />
+
+            <div className="text-muted-foreground mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs">
+              <span className="flex items-center gap-1.5">
+                <ScanLine className="size-3.5" /> No scans — digital PDFs only
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="size-3.5" /> Nothing written to disk
+              </span>
+              <span className="flex items-center gap-1.5">
+                <FileSpreadsheet className="size-3.5" /> Excel, CSV &amp; accounting import
+              </span>
+            </div>
+          </div>
+        )}
+
+        {stage.name === 'processing' && (
+          <div className="animate-fade-in mx-auto max-w-2xl pt-12">
+            <ProcessingPanel fileName={stage.fileName} progress={stage.progress} />
+          </div>
+        )}
+
+        {stage.name === 'review' && (
+          <div className="animate-fade-in">
+            <ReviewPanel
+              initialTransactions={stage.result.transactions}
+              meta={stage.result.meta}
+              initialValidation={stage.result.validation}
+              notices={stage.result.notices}
+              initialBankCode={stage.bankCode}
+              onStartOver={() => setStage({ name: 'upload' })}
+            />
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
 

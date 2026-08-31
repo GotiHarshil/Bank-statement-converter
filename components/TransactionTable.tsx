@@ -104,47 +104,50 @@ export function TransactionTable({
   const table = useReactTable({ data: ordered, columns, getCoreRowModel: getCoreRowModel() });
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full border-collapse text-sm">
-        <thead className="bg-muted/70 sticky top-0 z-10">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  scope="col"
-                  className="text-muted-foreground border-b px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
-                >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => {
-            const status = validationBySerial.get(row.original.serial)?.status ?? 'ok';
-            return (
-              <tr
-                key={row.id}
-                id={`txn-${row.original.serial}`}
-                className={cn(
-                  'border-b last:border-b-0',
-                  status === 'error' && 'bg-destructive/8',
-                  status === 'warning' && 'bg-warning/10',
-                  highlightedSerial === row.original.serial && 'ring-ring ring-2 ring-inset',
-                )}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-1.5 py-1 align-top">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+    <div className="animate-slide-up overflow-hidden rounded-xl border shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="max-h-[70vh] overflow-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead className="bg-muted/80 sticky top-0 z-10 backdrop-blur-sm">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    scope="col"
+                    className="text-muted-foreground border-b px-3 py-2.5 text-left text-[0.7rem] font-semibold tracking-wide whitespace-nowrap uppercase"
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
                 ))}
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row, index) => {
+              const status = validationBySerial.get(row.original.serial)?.status ?? 'ok';
+              return (
+                <tr
+                  key={row.id}
+                  id={`txn-${row.original.serial}`}
+                  className={cn(
+                    'border-b transition-colors last:border-b-0',
+                    status === 'error' && 'bg-destructive/8 hover:bg-destructive/12',
+                    status === 'warning' && 'bg-warning/10 hover:bg-warning/15',
+                    status === 'ok' && (index % 2 === 1 ? 'bg-muted/25 hover:bg-muted/50' : 'hover:bg-muted/50'),
+                    highlightedSerial === row.original.serial && 'ring-ring ring-2 ring-inset',
+                  )}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-1.5 py-1 align-top">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -257,7 +260,11 @@ function AmountCell({
 function StatusCell({ validation, row }: { validation: RowValidation | undefined; row: Transaction }) {
   const messages = [...(validation?.messages ?? []), ...row.issues];
   if (messages.length === 0) {
-    return <span className="text-muted-foreground px-2 text-xs">ok</span>;
+    return (
+      <span className="text-muted-foreground flex items-center gap-1.5 px-2 text-xs">
+        <span className="bg-success inline-block size-1.5 rounded-full" /> ok
+      </span>
+    );
   }
 
   const isError = validation?.status === 'error';

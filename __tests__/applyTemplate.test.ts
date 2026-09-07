@@ -109,3 +109,63 @@ describe('separate-dr-cr — a bank that prints 0.00 in the unused column', () =
     expect(txn.credit).toBe(250);
   });
 });
+
+/**
+ * A cash-credit or overdraft account carries a DR (debit) balance: the customer
+ * owes the bank, so a withdrawal *increases* the balance owed. Statements mark
+ * this with a `DR` suffix, which the parser turns into a negative balance — and
+ * the ordinary running-balance formula then reconciles unchanged.
+ *
+ * Every shipped fixture is an asset account that opens and stays positive, so
+ * without this the negative-balance path had no coverage at all.
+ */
+describe('cash-credit accounts with DR balances', () => {
+  it('reads DR balances as negative and reconciles a rising overdraft', () => {
+    const result = applyTemplate(
+      grid([
+        row(HEADER),
+        row(['01-08-2026', 'TRANSFER TO KHATUPATI', 'INR 203,924.00', '', 'INR 3,013,368.96 DR']),
+        row(['01-08-2026', 'IMPS COMMISSION CHARGES', 'INR 18.00', '', 'INR 3,013,386.96 DR']),
+        row(['02-08-2026', 'TRANSFER FROM DIVINE SYNT', '', 'INR 175,571.00', 'INR 2,837,815.96 DR']),
+      ]),
+      TEMPLATE,
+      '',
+    );
+
+    const txns = result!.transactions;
+    expect(txns).toHaveLength(3);
+
+    // Balances are negative: money owed on the facility, not held in it.
+    expect(txns.map((t) => t.balance)).toEqual([-3013368.96, -3013386.96, -2837815.96]);
+
+    // A debit makes the overdraft deeper; a credit pays it down.
+    expect(txns[1]!.debit).toBe(18);
+    expect(txns[2]!.credit).toBe(175571);
+
+    // Reversing row 1 out of its own balance gives the printed opening balance.
+    expect(result!.meta.openingBalance).toBe(-2809444.96);
+  });
+
+  it('reconciles the whole chain under the ordinary running-balance rule', async () => {
+    const { validate } = await import('@/lib/validate/reconcile');
+
+    const result = applyTemplate(
+      grid([
+        row(HEADER),
+        row(['01-08-2026', 'A', 'INR 203,924.00', '', 'INR 3,013,368.96 DR']),
+        row(['01-08-2026', 'B', 'INR 18.00', '', 'INR 3,013,386.96 DR']),
+        row(['02-08-2026', 'C', '', 'INR 175,571.00', 'INR 2,837,815.96 DR']),
+      ]),
+      TEMPLATE,
+      '',
+    );
+
+    const report = validate(result!.transactions, {
+      openingBalance: result!.meta.openingBalance,
+      closingBalance: result!.meta.closingBalance,
+    });
+
+    expect(report.ok).toBe(true);
+    expect(report.summary.errorRows).toBe(0);
+  });
+});

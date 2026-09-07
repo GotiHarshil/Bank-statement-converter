@@ -1,5 +1,5 @@
 import type { Grid, GridRow, PageText, TextItem } from '@/lib/schema';
-import { isAmountLike } from '@/lib/parse/parseAmount';
+import { isAmountLike, parseAmountDetailed } from '@/lib/parse/parseAmount';
 import { isDateLike } from '@/lib/parse/parseDate';
 
 export interface GridOptions {
@@ -603,6 +603,14 @@ export interface MergeSpec {
   textColumns: number[];
   /** Date formats to try, from the matched template. */
   dateFormats?: readonly string[];
+  /**
+   * Cells of the table's header row, when known.
+   *
+   * Banks repeat the header at every page break, and that break can fall
+   * between a transaction and its own wrapped remainder. Recognising the
+   * repeat lets the merge step over it instead of treating it as a divider.
+   */
+  headerCells?: readonly string[];
   /** Only rows in `[startIndex, endIndex)` participate; keeps headers and footers out. */
   startIndex?: number;
   endIndex?: number;
@@ -644,20 +652,28 @@ export function mergeWrappedRows(rows: GridRow[], spec: MergeSpec): GridRow[] {
     // Anything that is neither a transaction nor a wrapped line is structural —
     // a repeated header, a page banner, a totals line. Keep it as its own row so
     // the parser can skip it, and stop attaching to the transaction above.
-    if (!isContinuationRow(row, spec)) {
+    const continuation = classifyContinuation(row, spec);
+    if (!continuation) {
       out.push(row);
-      lastRealIndex = -1;
+      // A repeated column header is a page artifact, not a divider. A page break
+      // can fall between a transaction and its own wrapped remainder, and
+      // forgetting the transaction here would orphan those lines — losing the
+      // narration tail and any Dr/Cr marker that wrapped with it.
+      if (!isRepeatedHeader(row, spec)) lastRealIndex = -1;
       return;
     }
 
     const target = out[lastRealIndex]!;
     const textColumns = new Set(spec.textColumns);
+    const markerColumns = new Set(continuation.markerColumns);
 
     out[lastRealIndex] = {
       ...target,
-      // Only the text columns carry over. A continuation may also hold the
-      // transaction time under the date, which is not narration and is dropped.
       cells: target.cells.map((cell, c) => {
+        // A Dr/Cr marker that wrapped off an amount rejoins the value it qualifies.
+        if (markerColumns.has(c)) return withMarker(cell, row.cells[c] ?? '');
+        // Only the text columns carry over. A continuation may also hold the
+        // transaction time under the date, which is not narration and is dropped.
         if (!textColumns.has(c)) return cell;
         const extra = row.cells[c]?.trim() ?? '';
         if (!extra) return cell;
@@ -683,24 +699,77 @@ function isTransactionRow(row: GridRow, spec: MergeSpec): boolean {
 }
 
 /**
- * A wrapped line only ever spills into the text columns.
+ * True when this row is the table's column header printed again, as banks do at
+ * every page break.
  *
- * Requiring that — rather than merely "no date and no amount" — is what keeps
- * repeated page headers, "continued" banners and footer totals from being
- * swallowed into the transaction above them. Those rows put content in the date
- * column, which real wrapped narration never does, and folding one in corrupts
- * that transaction's date badly enough that the row is dropped entirely.
+ * Compared cell by cell against the header the template already resolved, so a
+ * banner or a totals line — which this must not match — still divides.
  */
-function isContinuationRow(row: GridRow, spec: MergeSpec): boolean {
-  const allowed = new Set(spec.textColumns);
-  let hasText = false;
+function isRepeatedHeader(row: GridRow, spec: MergeSpec): boolean {
+  const header = spec.headerCells;
+  if (!header) return false;
+
+  let matches = 0;
+  const width = Math.max(header.length, row.cells.length);
+
+  for (let c = 0; c < width; c++) {
+    const expected = (header[c] ?? '').trim().toLowerCase();
+    const actual = (row.cells[c] ?? '').trim().toLowerCase();
+    if (expected !== actual) return false;
+    if (actual !== '') matches++;
+  }
+
+  // Two labels lining up exactly is already conclusive; one could be chance.
+  return matches >= 2;
+}
+
+interface Continuation {
+  /** Amount columns where a bare Dr/Cr marker wrapped off the line above. */
+  markerColumns: number[];
+}
+
+/**
+ * Decides whether a row is a wrapped continuation of the transaction above it,
+ * and if so where its Dr/Cr markers are.
+ *
+ * A wrapped line only ever spills into the text columns, carries the
+ * transaction's time under its date, or carries a Dr/Cr marker that wrapped out
+ * of an amount cell. Requiring that — rather than merely "no date and no
+ * amount" — is what keeps repeated page headers, "continued" banners and footer
+ * totals from being swallowed into the transaction above them. Those rows put
+ * content in the date column, which real wrapped narration never does, and
+ * folding one in corrupts that transaction's date badly enough that the row is
+ * dropped entirely.
+ *
+ * Returns `null` for a structural row.
+ */
+function classifyContinuation(row: GridRow, spec: MergeSpec): Continuation | null {
+  const text = new Set(spec.textColumns);
+  const amounts = new Set(spec.amountColumns);
+
+  const markerColumns: number[] = [];
+  let hasContent = false;
 
   for (let c = 0; c < row.cells.length; c++) {
     const cell = (row.cells[c] ?? '').trim();
     if (cell === '') continue;
 
-    if (allowed.has(c)) {
-      hasText = true;
+    if (text.has(c)) {
+      hasContent = true;
+      continue;
+    }
+
+    // A cash-credit or overdraft statement prints "INR 3,013,368.96 DR" and lets
+    // the marker wrap onto the next visual line, still in the balance column.
+    // That marker belongs to the row above: without it an overdraft balance
+    // reads positive and every following row fails to reconcile.
+    //
+    // A marker alone is enough to make this a continuation — if only the marker
+    // wraps and no narration does, treating the row as structural would break
+    // the merge chain and orphan the lines after it.
+    if (amounts.has(c) && BARE_DR_CR.test(cell)) {
+      markerColumns.push(c);
+      hasContent = true;
       continue;
     }
 
@@ -708,14 +777,48 @@ function isContinuationRow(row: GridRow, spec: MergeSpec): boolean {
     // That is part of the same transaction, not a structural row.
     if (BARE_TIME.test(cell)) continue;
 
-    return false;
+    return null;
   }
 
-  return hasText;
+  return hasContent ? { markerColumns } : null;
+}
+
+/**
+ * Reattaches a Dr/Cr marker to the amount it wrapped away from.
+ *
+ * Only an amount that carries no marker of its own may take one, so a stray
+ * marker can neither invent a sign on an empty cell nor overwrite a printed one.
+ */
+function withMarker(cell: string, marker: string): string {
+  const current = cell.trim();
+  if (current === '') return cell;
+
+  const parsed = parseAmountDetailed(current);
+  if (!parsed || parsed.marker !== null) return cell;
+
+  return `${current} ${marker.trim()}`;
 }
 
 /** `14:06` or `14:06:13`, optionally with an am/pm suffix. */
 const BARE_TIME = /^\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AaPp][Mm])?$/;
+
+/**
+ * A Dr/Cr marker alone on a line — `DR`, `Cr.`, `(Dr)`.
+ *
+ * Deliberately narrower than `parseDrCrFlag`, which also accepts "debit",
+ * "credit", "d" and "c": a repeated column header reading "Debit" must stay
+ * structural, and a lone letter in an amount column is far more likely to be a
+ * branch or instrument code than a sign.
+ */
+const BARE_DR_CR = /^\(?(?:dr|cr)\.?\)?$/i;
+
+/**
+ * A wrapped Dr/Cr flag in a *dedicated* flag column is deliberately not handled
+ * here. Such a flag is the movement itself rather than a qualifier on a value
+ * that is already present, so it needs its own empty-cell append rule — and no
+ * statement seen so far wraps one. To add it: put `flagColumn` on `MergeSpec`,
+ * pass `columns.drCrFlag` from `applyTemplate`, and allow it above.
+ */
 
 function isBlank(row: GridRow): boolean {
   return row.cells.every((c) => c.trim() === '');

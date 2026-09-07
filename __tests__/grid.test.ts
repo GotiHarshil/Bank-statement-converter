@@ -169,6 +169,155 @@ describe('wrapped narration merge', () => {
   });
 });
 
+/**
+ * Cash-credit and overdraft statements print the balance as `INR 1,000.00 DR`
+ * and let that marker wrap onto the next line, still in the balance column.
+ *
+ * Losing it is not cosmetic: the balance then reads positive, so an account that
+ * is overdrawn looks like an asset account and every following row fails to
+ * reconcile. A real Indian Bank statement produced 88 such failures.
+ */
+describe('wrapped Dr/Cr marker merge', () => {
+  const spec = { dateColumn: 0, amountColumns: [2, 3], textColumns: [1] };
+
+  it('reattaches a marker that wrapped off the balance', () => {
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 01 2026', 'TRANSFER TO 97158053098 KHATUPATI', 'INR 203,924.00', 'INR 3,013,368.96']),
+        row(['', 'INDUSTRIES/0581901010050946/UBIN/Invo', '', 'DR']),
+        row(['', '21311706367//BRANCH : ATM SERVICE BRANCH', '', '']),
+        row(['Aug 02 2026', 'NEXT TXN', 'INR 1.00', 'INR 3,013,369.96']),
+      ],
+      spec,
+    );
+
+    expect(merged).toHaveLength(2);
+    expect(merged[0]!.cells[3]).toBe('INR 3,013,368.96 DR');
+    expect(merged[0]!.cells[1]).toBe(
+      'TRANSFER TO 97158053098 KHATUPATI INDUSTRIES/0581901010050946/UBIN/Invo 21311706367//BRANCH : ATM SERVICE BRANCH',
+    );
+    // The marker qualifies the balance; it must never land in the narration.
+    expect(merged[0]!.cells[1]).not.toMatch(/(^|\s)DR(\s|$)/);
+  });
+
+  it('folds a marker-only line and keeps the chain alive for the lines after it', () => {
+    // If only the marker wraps and no narration does, treating that row as
+    // structural would sever the transaction from the lines that follow.
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 01 2026', 'SHORT NARRATION', 'INR 18.00', 'INR 3,013,386.96']),
+        row(['', '', '', 'DR']),
+        row(['', 'TRAILING NARRATION LINE', '', '']),
+        row(['Aug 02 2026', 'NEXT TXN', 'INR 1.00', 'INR 3,013,387.96']),
+      ],
+      spec,
+    );
+
+    expect(merged).toHaveLength(2);
+    expect(merged[0]!.cells[3]).toBe('INR 3,013,386.96 DR');
+    expect(merged[0]!.cells[1]).toBe('SHORT NARRATION TRAILING NARRATION LINE');
+  });
+
+  it('keeps the printed line structure free of the marker', () => {
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 01 2026', 'FIRST LINE', 'INR 18.00', 'INR 100.00']),
+        row(['', 'SECOND LINE', '', 'DR']),
+        row(['Aug 02 2026', 'NEXT TXN', 'INR 1.00', 'INR 101.00']),
+      ],
+      spec,
+    );
+
+    // sourceLines reproduces what the statement printed, so the balance there is
+    // the original unmarked value and no line contributes "DR" to the narration.
+    expect(merged[0]!.sourceLines!.map((line) => line[1])).toEqual(['FIRST LINE', 'SECOND LINE']);
+    expect(merged[0]!.sourceLines![0]![3]).toBe('INR 100.00');
+  });
+
+  it('does not treat a repeated column header as a wrapped marker', () => {
+    // "Debit" would pass a loose Dr/Cr test. With the date cell empty, this
+    // header is only held back by the marker pattern being strictly anchored.
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 01 2026', 'A TXN', 'INR 18.00', 'INR 100.00']),
+        row(['', 'Narration', 'Debit', 'Balance']),
+        row(['Aug 02 2026', 'NEXT TXN', 'INR 1.00', 'INR 101.00']),
+      ],
+      spec,
+    );
+
+    expect(merged).toHaveLength(3);
+    expect(merged[0]!.cells[2]).toBe('INR 18.00');
+  });
+
+  it('never overwrites a marker the amount already carries', () => {
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 01 2026', 'A TXN', 'INR 18.00', '1,000.00(Cr)']),
+        row(['', 'MORE NARRATION', '', 'DR']),
+      ],
+      spec,
+    );
+
+    expect(merged[0]!.cells[3]).toBe('1,000.00(Cr)');
+  });
+
+  it('never invents a sign on an empty amount cell', () => {
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 01 2026', 'A TXN', '', 'INR 100.00']),
+        row(['', 'MORE NARRATION', 'Dr', '']),
+      ],
+      spec,
+    );
+
+    expect(merged[0]!.cells[2]).toBe('');
+  });
+});
+
+/**
+ * A page break can fall between a transaction and its own wrapped remainder, so
+ * the repeated column header lands in the middle of one transaction. Treating
+ * that header as a divider orphans the rest of the transaction — losing its
+ * narration tail and any Dr/Cr marker that wrapped with it.
+ */
+describe('repeated header between a transaction and its continuation', () => {
+  const header = ['Date', 'Transaction Details', 'Debits', 'Balance'];
+  const spec = { dateColumn: 0, amountColumns: [2, 3], textColumns: [1], headerCells: header };
+
+  it('steps over the repeat and still folds the continuation', () => {
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 02 2026', 'TRANSFER FROM 97164000128', 'INR 290,327.00', 'INR 2,699,704.57']),
+        row(header),
+        row(['', 'NEFT/SPCB/SPCBN52026080200843014/CALIICO', '', 'DR']),
+        row(['', 'TR//BRANCH : MUMBAI FORT', '', '']),
+      ],
+      spec,
+    );
+
+    const transaction = merged.find((r) => r.cells[0] === 'Aug 02 2026')!;
+    expect(transaction.cells[3]).toBe('INR 2,699,704.57 DR');
+    expect(transaction.cells[1]).toBe(
+      'TRANSFER FROM 97164000128 NEFT/SPCB/SPCBN52026080200843014/CALIICO TR//BRANCH : MUMBAI FORT',
+    );
+  });
+
+  it('still lets a footer divide, so its text is never absorbed', () => {
+    const merged = mergeWrappedRows(
+      [
+        row(['Aug 02 2026', 'A TXN', 'INR 1.00', 'INR 100.00']),
+        row(['Closing Balance: 100.00', '', '', '']),
+        row(['', 'UNRELATED TRAILING TEXT', '', '']),
+      ],
+      spec,
+    );
+
+    expect(merged).toHaveLength(3);
+    expect(merged[0]!.cells[1]).toBe('A TXN');
+  });
+});
+
 describe('grid reconstruction on a real PDF', () => {
   it('recovers the HDFC column layout', async () => {
     const doc = await extractDocument(

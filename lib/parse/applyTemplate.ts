@@ -197,6 +197,7 @@ export function applyTemplate(
     amountColumns,
     textColumns,
     dateFormats: template.dateFormats,
+    ...(headerIndex >= 0 ? { headerCells: grid.rows[headerIndex]?.cells } : {}),
     startIndex: headerIndex + 1,
   });
 

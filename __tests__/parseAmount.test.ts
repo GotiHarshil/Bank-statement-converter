@@ -127,6 +127,14 @@ describe('parseAmount - rejects non-amounts', () => {
     expect(isAmountLike('01/04/2024')).toBe(false);
     expect(isAmountLike('')).toBe(false);
   });
+
+  it('rejects a bare Dr/Cr marker', () => {
+    // Load-bearing for the wrapped-marker merge: a line carrying only "DR" is a
+    // continuation of the row above, and must never be read as a transaction.
+    for (const token of ['DR', 'Dr', 'cr', 'CR.', '(Dr)', '(CR)']) {
+      expect(isAmountLike(token), token).toBe(false);
+    }
+  });
 });
 
 describe('parseDrCrFlag', () => {

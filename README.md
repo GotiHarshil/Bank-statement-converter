@@ -11,8 +11,8 @@ npm install
 npm run dev
 ```
 
-Then open the printed URL. No database, no configuration, and no API key are needed for the ten
-built-in banks.
+Then open the printed URL. No database, no configuration, and no API key are needed for the shipped
+bank templates (see `lib/banks/registry.ts` for the current list).
 
 ---
 
@@ -207,7 +207,7 @@ headers, reconciling footers, and one password-protected statement.
 | `parseDate.test.ts` | `dd/MM/yy`, `dd-MM-yyyy`, `dd MMM yyyy`, two-digit-year pivot, invalid calendar dates |
 | `grid.test.ts` | Row clustering, cell assignment, wrapped-narration merge, repeated headers and footers |
 | `extract.test.ts` | Magic bytes, `PASSWORD_REQUIRED` vs `PASSWORD_INCORRECT`, scanned-PDF rejection |
-| `banks.test.ts` | All ten banks end-to-end against their golden ledgers |
+| `banks.test.ts` | Every shipped bank end-to-end against its golden ledger |
 | `reconcile.test.ts` | A deliberately swapped debit/credit, a dropped row, a transposed digit, tolerance limits |
 | `export.test.ts` | CSV quoting and formula-injection guarding, XLSX types, formats, summary sheet |
 

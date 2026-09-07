@@ -387,4 +387,35 @@ export const FIXTURE_SPECS: FixtureSpec[] = [
     ],
     footer: commonFooter,
   },
+  {
+    // IndusInd Bank never prints its own name on the statement; only the
+    // "Branch IFSC Code" line identifies it, so detection leans on the IFSC.
+    id: 'indusind-bank-v1',
+    bankName: 'IndusInd Bank',
+    dateFormat: 'dd MMM yyyy',
+    amountStyle: 'separate-dr-cr',
+    columns: [
+      L('Date', 32, 48),
+      L('Particulars', 84, 190),
+      L('Chq No/Ref No', 278, 66),
+      R('Withdrawal', 348, 64),
+      R('Deposit', 416, 64),
+      R('Balance', 484, 68),
+    ],
+    headerLines: [
+      'Transaction History',
+      NAME_LINE,
+      'Statement Period: 01 Apr 2024 - 30 Jun 2024   Branch IFSC Code: INDB0000023',
+    ],
+    subHeader: 'Transaction History (continued)',
+    row: (e, _i, f) => [
+      formatDate(e.date, f),
+      e.narration,
+      e.refNo,
+      e.debit === null ? '' : inr(e.debit),
+      e.credit === null ? '' : inr(e.credit),
+      inr(e.balance),
+    ],
+    footer: commonFooter,
+  },
 ];

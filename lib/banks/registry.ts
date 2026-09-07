@@ -80,6 +80,7 @@ import { canaraSavingsV1 } from './templates/canara';
 import { unionSavingsV1 } from './templates/union';
 import { idfcFirstSavingsV1 } from './templates/idfc-first';
 import { indianBankV1 } from './templates/indian-bank';
+import { indusindBankV1 } from './templates/indusind';
 
 export const BANK_TEMPLATES: BankTemplate[] = [
   hdfcSavingsV1,
@@ -93,6 +94,7 @@ export const BANK_TEMPLATES: BankTemplate[] = [
   unionSavingsV1,
   idfcFirstSavingsV1,
   indianBankV1,
+  indusindBankV1,
 ];
 
 /** Below this, no template is trusted and the LLM fallback takes over. */

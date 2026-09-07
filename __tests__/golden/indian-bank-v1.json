@@ -1,0 +1,316 @@
+{
+  "bankName": "Indian Bank",
+  "templateId": "indian-bank-v1",
+  "openingBalance": 281370,
+  "closingBalance": 1976495.02,
+  "totalDebits": 399382.91,
+  "totalCredits": 2094507.93,
+  "transactions": [
+    {
+      "date": "2024-04-04",
+      "valueDate": "2024-04-04",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "946388698",
+      "debit": null,
+      "credit": 86836.21,
+      "balance": 368206.21
+    },
+    {
+      "date": "2024-04-06",
+      "valueDate": "2024-04-06",
+      "narration": "BILLPAY DR-RELIANCE JIO-9876543210-AUTOPAY",
+      "refNo": "840506101",
+      "debit": 28172.07,
+      "credit": null,
+      "balance": 340034.14
+    },
+    {
+      "date": "2024-04-06",
+      "valueDate": "2024-04-06",
+      "narration": "BILLPAY DR-RELIANCE JIO-9876543210-AUTOPAY",
+      "refNo": "863125201",
+      "debit": 13174.13,
+      "credit": null,
+      "balance": 326860.01
+    },
+    {
+      "date": "2024-04-06",
+      "valueDate": "2024-04-06",
+      "narration": "IMPS-408912345678-MEHTA AND SONS-HDFC-PAYMENT",
+      "refNo": "714627392",
+      "debit": null,
+      "credit": 165732.35,
+      "balance": 492592.36
+    },
+    {
+      "date": "2024-04-06",
+      "valueDate": "2024-04-07",
+      "narration": "POS 4571XXXXXXXX8821 RELIANCE RETAIL LTD MUMBAI",
+      "refNo": "754711232",
+      "debit": 11623.86,
+      "credit": null,
+      "balance": 480968.5
+    },
+    {
+      "date": "2024-04-09",
+      "valueDate": "2024-04-09",
+      "narration": "GST PAYMENT CPIN 24040012345678 CGST SGST APRIL 2024",
+      "refNo": "794492196",
+      "debit": 57533.37,
+      "credit": null,
+      "balance": 423435.13
+    },
+    {
+      "date": "2024-04-11",
+      "valueDate": "2024-04-12",
+      "narration": "BILLPAY DR-RELIANCE JIO-9876543210-AUTOPAY",
+      "refNo": "297175944",
+      "debit": 57913.06,
+      "credit": null,
+      "balance": 365522.07
+    },
+    {
+      "date": "2024-04-12",
+      "valueDate": "2024-04-12",
+      "narration": "RTGS CR HDFCR52024040112345 SHREE ENTERPRISES PVT LTD INVOICE SETTLEMENT",
+      "refNo": "507902882",
+      "debit": null,
+      "credit": 39902.28,
+      "balance": 405424.35
+    },
+    {
+      "date": "2024-04-14",
+      "valueDate": "2024-04-15",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "773058437",
+      "debit": null,
+      "credit": 1344.85,
+      "balance": 406769.2
+    },
+    {
+      "date": "2024-04-17",
+      "valueDate": "2024-04-17",
+      "narration": "SALARY CREDIT APRIL 2024 EMPLOYEE CODE 88213",
+      "refNo": "348512680",
+      "debit": null,
+      "credit": 216015.77,
+      "balance": 622784.97
+    },
+    {
+      "date": "2024-04-18",
+      "valueDate": "2024-04-18",
+      "narration": "RTGS CR HDFCR52024040112345 SHREE ENTERPRISES PVT LTD INVOICE SETTLEMENT",
+      "refNo": "251100719",
+      "debit": null,
+      "credit": 173263.01,
+      "balance": 796047.98
+    },
+    {
+      "date": "2024-04-18",
+      "valueDate": "2024-04-18",
+      "narration": "UPI/DR/412299887766/SWIGGY/YESB/swiggy@ybl/Food Order",
+      "refNo": "644360717",
+      "debit": 21381.37,
+      "credit": null,
+      "balance": 774666.61
+    },
+    {
+      "date": "2024-04-21",
+      "valueDate": "2024-04-21",
+      "narration": "SALARY CREDIT APRIL 2024 EMPLOYEE CODE 88213",
+      "refNo": "515401648",
+      "debit": null,
+      "credit": 175046.99,
+      "balance": 949713.6
+    },
+    {
+      "date": "2024-04-22",
+      "valueDate": "2024-04-22",
+      "narration": "INT.PD:01-01-2024 to 31-03-2024",
+      "refNo": "387956689",
+      "debit": null,
+      "credit": 181772.96,
+      "balance": 1131486.56
+    },
+    {
+      "date": "2024-04-22",
+      "valueDate": "2024-04-22",
+      "narration": "POS 4571XXXXXXXX8821 RELIANCE RETAIL LTD MUMBAI",
+      "refNo": "836529579",
+      "debit": 9925.02,
+      "credit": null,
+      "balance": 1121561.54
+    },
+    {
+      "date": "2024-04-23",
+      "valueDate": "2024-04-24",
+      "narration": "BILLPAY DR-RELIANCE JIO-9876543210-AUTOPAY",
+      "refNo": "237053623",
+      "debit": 4448.53,
+      "credit": null,
+      "balance": 1117113.01
+    },
+    {
+      "date": "2024-04-23",
+      "valueDate": "2024-04-23",
+      "narration": "SALARY CREDIT APRIL 2024 EMPLOYEE CODE 88213",
+      "refNo": "436472695",
+      "debit": null,
+      "credit": 113148.01,
+      "balance": 1230261.02
+    },
+    {
+      "date": "2024-04-25",
+      "valueDate": "2024-04-25",
+      "narration": "SALARY CREDIT APRIL 2024 EMPLOYEE CODE 88213",
+      "refNo": "172586873",
+      "debit": null,
+      "credit": 210707.04,
+      "balance": 1440968.06
+    },
+    {
+      "date": "2024-04-25",
+      "valueDate": "2024-04-25",
+      "narration": "RTGS CR HDFCR52024040112345 SHREE ENTERPRISES PVT LTD INVOICE SETTLEMENT",
+      "refNo": "916217174",
+      "debit": null,
+      "credit": 201532.72,
+      "balance": 1642500.78
+    },
+    {
+      "date": "2024-04-26",
+      "valueDate": "2024-04-27",
+      "narration": "UPI/412233445566/Payment from/9876543210@ybl/Settlement",
+      "refNo": "271114183",
+      "debit": null,
+      "credit": 21341.61,
+      "balance": 1663842.39
+    },
+    {
+      "date": "2024-04-26",
+      "valueDate": "2024-04-26",
+      "narration": "POS 4571XXXXXXXX8821 RELIANCE RETAIL LTD MUMBAI",
+      "refNo": "971361111",
+      "debit": 49958.8,
+      "credit": null,
+      "balance": 1613883.59
+    },
+    {
+      "date": "2024-04-26",
+      "valueDate": "2024-04-26",
+      "narration": "UPI/DR/412299887766/SWIGGY/YESB/swiggy@ybl/Food Order",
+      "refNo": "645047479",
+      "debit": 20857.02,
+      "credit": null,
+      "balance": 1593026.57
+    },
+    {
+      "date": "2024-04-28",
+      "valueDate": "2024-04-28",
+      "narration": "EMI DEBIT HOME LOAN ACCOUNT 50200012345678 INSTALMENT 42",
+      "refNo": "142644859",
+      "debit": 28232.74,
+      "credit": null,
+      "balance": 1564793.83
+    },
+    {
+      "date": "2024-04-29",
+      "valueDate": "2024-04-30",
+      "narration": "ATM WDL-ATM CASH-HDFC ATM BANDRA WEST MUMBAI 400050",
+      "refNo": "784075210",
+      "debit": 37227.17,
+      "credit": null,
+      "balance": 1527566.66
+    },
+    {
+      "date": "2024-05-01",
+      "valueDate": "2024-05-01",
+      "narration": "NEFT CR-SBIN0001234-VIJAY TRADERS-PAYMENT AGAINST INVOICE 4471",
+      "refNo": "232831483",
+      "debit": null,
+      "credit": 43281.02,
+      "balance": 1570847.68
+    },
+    {
+      "date": "2024-05-02",
+      "valueDate": "2024-05-02",
+      "narration": "CASH DEPOSIT AT BRANCH ANDHERI EAST MUMBAI",
+      "refNo": "242152368",
+      "debit": null,
+      "credit": 41999.89,
+      "balance": 1612847.57
+    },
+    {
+      "date": "2024-05-04",
+      "valueDate": "2024-05-04",
+      "narration": "ATM WDL-ATM CASH-HDFC ATM BANDRA WEST MUMBAI 400050",
+      "refNo": "687004776",
+      "debit": 8712.01,
+      "credit": null,
+      "balance": 1604135.56
+    },
+    {
+      "date": "2024-05-06",
+      "valueDate": "2024-05-06",
+      "narration": "UPI/DR/412299887766/SWIGGY/YESB/swiggy@ybl/Food Order",
+      "refNo": "336606792",
+      "debit": 1016.06,
+      "credit": null,
+      "balance": 1603119.5
+    },
+    {
+      "date": "2024-05-09",
+      "valueDate": "2024-05-10",
+      "narration": "UPI/412233445566/Payment from/9876543210@ybl/Settlement",
+      "refNo": "134421965",
+      "debit": null,
+      "credit": 154253.74,
+      "balance": 1757373.24
+    },
+    {
+      "date": "2024-05-11",
+      "valueDate": "2024-05-12",
+      "narration": "IMPS-408912345678-MEHTA AND SONS-HDFC-PAYMENT",
+      "refNo": "743406787",
+      "debit": null,
+      "credit": 143010,
+      "balance": 1900383.24
+    },
+    {
+      "date": "2024-05-11",
+      "valueDate": "2024-05-11",
+      "narration": "CHQ PAID-MICR CTS-123456",
+      "refNo": "786787535",
+      "debit": 15569.83,
+      "credit": null,
+      "balance": 1884813.41
+    },
+    {
+      "date": "2024-05-13",
+      "valueDate": "2024-05-13",
+      "narration": "UPI/DR/412299887766/SWIGGY/YESB/swiggy@ybl/Food Order",
+      "refNo": "219337916",
+      "debit": 11092.69,
+      "credit": null,
+      "balance": 1873720.72
+    },
+    {
+      "date": "2024-05-16",
+      "valueDate": "2024-05-16",
+      "narration": "CASH DEPOSIT AT BRANCH ANDHERI EAST MUMBAI",
+      "refNo": "621954247",
+      "debit": null,
+      "credit": 125319.48,
+      "balance": 1999040.2
+    },
+    {
+      "date": "2024-05-18",
+      "valueDate": "2024-05-18",
+      "narration": "CHQ PAID-MICR CTS-123456",
+      "refNo": "125824605",
+      "debit": 22545.18,
+      "credit": null,
+      "balance": 1976495.02
+    }
+  ]
+}

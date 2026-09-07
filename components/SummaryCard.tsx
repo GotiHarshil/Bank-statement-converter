@@ -148,10 +148,23 @@ function StatTile({
           tone === 'destructive' && 'text-destructive',
         )}
       >
-        {value === null ? '—' : `${prefix ?? ''}${formatInr(value)}`}
+        {value === null ? '—' : `${prefix ?? ''}${formatBalance(value)}`}
+        {value !== null && value < 0 && !prefix && (
+          <span className="text-muted-foreground ml-1 text-xs font-medium">DR</span>
+        )}
       </p>
     </Card>
   );
+}
+
+/**
+ * A cash-credit or overdraft account carries a negative balance — money owed on
+ * the facility. Indian statements write that as a positive figure followed by
+ * DR, which reads correctly to an accountant where a large minus sign looks
+ * like a parsing error. The caller adds the DR label beside it.
+ */
+function formatBalance(value: number): string {
+  return formatInr(Math.abs(value));
 }
 
 function CheckIcon({ status }: { status: 'pass' | 'fail' | 'skipped' }) {

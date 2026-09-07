@@ -1,6 +1,7 @@
 import { detectTemplate } from '@/lib/banks/registry';
-import { applyTemplate } from '@/lib/parse/applyTemplate';
-import { inferColumnMapping } from '@/lib/parse/llmFallback';
+import { applyTemplate, type ApplyResult } from '@/lib/parse/applyTemplate';
+import { inferColumnMapping, layoutFingerprint, toStoredTemplate } from '@/lib/parse/llmFallback';
+import { hydrateTemplate, templateStore } from '@/lib/banks/learned/hydrate';
 import { extractDocument, pageToText } from '@/lib/pdf/extract';
 import { buildGrid } from '@/lib/pdf/grid';
 import { validate } from '@/lib/validate/reconcile';
@@ -53,11 +54,7 @@ export async function convertStatement(bytes: Uint8Array, options: ConvertOption
     const result = applyTemplate(grid, detected.template, allText);
     if (result) {
       report({ stage: 'validating' });
-      const validation = validate(result.transactions, {
-        openingBalance: result.meta.openingBalance,
-        closingBalance: result.meta.closingBalance,
-        statedTransactionCount: result.meta.statedTransactionCount,
-      });
+      const validation = validate(result.transactions, summaryOf(result));
 
       // A template that parses but does not reconcile is worse than no template
       // at all, so try the LLM mapping before returning a broken chain.
@@ -77,6 +74,45 @@ export async function convertStatement(bytes: Uint8Array, options: ConvertOption
     } else {
       notices.push(`The ${detected.template.bankName} template matched the cover page but not the table layout.`);
     }
+  }
+
+  // A layout learned from an earlier statement is reused deterministically: no
+  // model call, no data leaving the server, so no consent needed either.
+  const fingerprint = layoutFingerprint(grid, doc.firstPageText);
+  const store = templateStore();
+  const learned = await store.get(fingerprint).catch(() => null);
+
+  if (learned) {
+    report({ stage: 'parsing', bankName: learned.bankName });
+    const result = applyTemplate(grid, hydrateTemplate(learned), allText);
+
+    if (result) {
+      report({ stage: 'validating' });
+      const validation = validate(result.transactions, summaryOf(result));
+
+      if (validation.ok) {
+        // Count the use, but never let a bookkeeping write fail a conversion.
+        void store.put({ ...learned, timesUsed: learned.timesUsed + 1 }).catch(() => undefined);
+
+        return {
+          ok: true,
+          transactions: result.transactions,
+          meta: { ...result.meta, parsedBy: 'template', pageCount: doc.numPages },
+          validation,
+          notices: [
+            ...notices,
+            ...result.notices,
+            `Parsed using the "${learned.bankName}" layout this app learned from an earlier statement — no AI was used.`,
+          ],
+        };
+      }
+    }
+
+    // The bank changed its layout: drop what we learned and infer again.
+    await store.delete(fingerprint).catch(() => undefined);
+    notices.push(
+      `The stored ${learned.bankName} layout no longer matches this statement, so the column mapping was inferred again.`,
+    );
   }
 
   if (!options.allowLlmFallback) {
@@ -100,17 +136,39 @@ export async function convertStatement(bytes: Uint8Array, options: ConvertOption
   }
 
   report({ stage: 'validating' });
-  const validation = validate(result.transactions, {
-    openingBalance: result.meta.openingBalance,
-    closingBalance: result.meta.closingBalance,
-    statedTransactionCount: result.meta.statedTransactionCount,
-  });
+  const validation = validate(result.transactions, summaryOf(result));
+  const learnedNotices: string[] = [];
+
+  // Only remember a mapping the running balance proves correct.
+  //
+  // The balance chain is an independent oracle: if every row follows from the
+  // one before it, the columns were read right. A mapping that does not
+  // reconcile is still returned for the user to review, but storing it would
+  // let one bad inference silently mis-parse every future statement.
+  if (validation.ok) {
+    const storable = toStoredTemplate(inferred.mapping, grid, inferred.fingerprint);
+    if (storable) {
+      await store.put(storable).catch(() => undefined);
+      learnedNotices.push(
+        `This layout has been saved as "${storable.bankName}", so statements like it will be converted without AI from now on.`,
+      );
+    }
+  }
 
   return {
     ok: true,
     transactions: result.transactions,
     meta: { ...result.meta, parsedBy: 'llm', pageCount: doc.numPages },
     validation,
-    notices: [...notices, ...result.notices, ...inferred.notices],
+    notices: [...notices, ...result.notices, ...inferred.notices, ...learnedNotices],
+  };
+}
+
+/** The fields `validate` needs from a parse result. */
+function summaryOf(result: ApplyResult) {
+  return {
+    openingBalance: result.meta.openingBalance,
+    closingBalance: result.meta.closingBalance,
+    statedTransactionCount: result.meta.statedTransactionCount,
   };
 }

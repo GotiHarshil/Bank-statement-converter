@@ -45,7 +45,7 @@ disqualifying.
 | --- | --- | --- |
 | 1. Extract | `lib/pdf/extract.ts` | PDF → positioned text items (`{str, x, y, width, height, fontSize}`), one array per page. Detects encryption and scans. |
 | 2. Reconstruct | `lib/pdf/grid.ts` | Cluster items into rows by baseline, detect column boundaries, emit a `Grid`. |
-| 3. Detect | `lib/banks/registry.ts` | Run every template's `detect()`; the highest confidence above 0.7 wins. |
+| 3. Detect | `lib/banks/registry.ts` | Run every template's `detect()`; the highest confidence above 0.7 wins. Failing that, look up a layout learned from an earlier statement. |
 | 4. Parse | `lib/parse/applyTemplate.ts` | Fold wrapped narration, then read each field with `parseDate` / `parseAmount`. |
 | 5. Validate | `lib/validate/reconcile.ts` | Running balance, footer reconciliation, date order, completeness. |
 | 6. Export | `lib/export/*` | XLSX (frozen header, real dates, `#,##,##0.00`, summary sheet), CSV, and an accounting-import CSV. |
@@ -82,6 +82,35 @@ fixture does this), the reference number stays inside the narration and no `refN
 amounts and balances are unaffected, and the test suite asserts that no characters are lost.
 
 ---
+
+## Learning a bank it has not seen
+
+An unrecognised statement can be mapped once by AI and then handled deterministically for good.
+
+```
+detect()  →  a shipped template matches            → parse → validate → done
+   ↓ no match
+learned layout for this fingerprint?  →  hit       → parse → validate → done (no AI, no consent)
+   ↓ miss
+AI-assisted mapping (opt-in)                       → parse → validate
+                                                       ├─ reconciles → remember it
+                                                       └─ fails      → return for review, remember nothing
+```
+
+Three properties make this safe to rely on:
+
+- **Only a mapping the running balance proves correct is stored.** The balance chain is an
+  independent oracle: if every row follows from the one before it, the columns were read right. A
+  mapping that does not reconcile is still shown to you, but storing it would let one bad inference
+  quietly mis-parse every future statement from that bank.
+- **Layouts are stored as header labels, not column indices**, so a learned template resolves through
+  exactly the same header matching a hand-written one uses — and still works if a later statement
+  lays its columns out differently.
+- **Nothing but column labels is persisted.** No transaction, amount, narration, balance or account
+  number is written to the store; header text is generic table headings. A stored layout that stops
+  reconciling is evicted and re-learned.
+
+A learned hit needs no AI consent — nothing leaves the server on that path.
 
 ## Adding a new bank
 
@@ -213,12 +242,14 @@ npm run check:api -- http://localhost:3000        # drive a running server
 | Variable | Needed for |
 | --- | --- |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | The LLM column-mapping fallback only (Google Gemini, direct). Everything else works without it. |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Persisting learned layouts across deploys. Without them the app falls back to a per-process store and simply re-learns a layout after a restart. Provision with `vercel integration add upstash`. |
 
 ## Scope
 
-v1 deliberately excludes OCR (scanned PDFs are rejected with a clear message rather than silently
-producing empty output) and has no database — every conversion is in-memory and per-request. The
-inferred-mapping cache is per-process, so correctness never depends on it, only cost.
+v1 deliberately excludes OCR: scanned PDFs are rejected with a clear message rather than silently
+producing empty output. No statement is ever written to disk — every conversion is in-memory and
+per-request. The only thing persisted is a learned column *layout* (header labels and which field
+each maps to); correctness never depends on that store, only cost, and the app runs without it.
 
 Known advisories from transitive dependencies (`next` → `postcss`/`sharp`, `exceljs` → `uuid`) are
 left in place: `npm audit fix --force` would downgrade `exceljs` to a major version without the

@@ -4,7 +4,10 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import type { BankTemplate } from '@/lib/banks/registry';
 import { gridToMarkdown } from '@/lib/pdf/grid';
+import { isAmountLike } from '@/lib/parse/parseAmount';
+import { isDateLike } from '@/lib/parse/parseDate';
 import { ConvertError, type Grid } from '@/lib/schema';
+import type { StoredTemplate } from '@/lib/banks/learned/store';
 
 /**
  * LLM fallback for statements no template recognises.
@@ -64,35 +67,115 @@ export interface InferenceResult {
   template: BankTemplate;
   /** Row the model identified as the column header. */
   headerRowIndex: number;
+  /** Layout key, so a mapping that reconciles can be stored under it. */
+  fingerprint: string;
+  /** The raw mapping, for converting to a storable record once it is proven. */
+  mapping: InferredMapping;
   notices: string[];
 }
 
 /**
- * Inferred mappings, keyed by a fingerprint of the layout.
+ * The words banks use to head a statement column.
  *
- * A bank is inferred once and then handled deterministically forever after,
- * within the life of the process. There is no database in v1, so this cache is
- * per-instance — correctness never depends on it, only cost.
+ * A cell only contributes to the fingerprint if it contains one of these, which
+ * is what keeps customer-specific text — names, addresses, narration — out of
+ * the key. Two customers at the same bank must fingerprint identically.
  */
-const MAPPING_CACHE = new Map<string, InferredMapping>();
+const HEADER_WORDS = new Set([
+  'amount', 'balance', 'branch', 'cheque', 'chq', 'closing', 'cr', 'credit', 'credits', 'date',
+  'debit', 'debits', 'deposit', 'deposits', 'description', 'details', 'dr', 'id', 'instrument',
+  'narration', 'no', 'number', 'particulars', 'ref', 'reference', 'remarks', 'running', 'serial',
+  'sl', 'sr', 'tran', 'transaction', 'txn', 'type', 'utr', 'value', 'withdrawal', 'withdrawals',
+]);
 
-/** Fingerprints the layout by its header row and column count. */
-export function layoutFingerprint(grid: Grid): string {
-  const header = grid.rows.find((row) => row.cells.filter((c) => c.trim() !== '').length >= 3);
-  const signature = `${grid.columnCount}:${(header?.cells ?? []).map((c) => c.trim().toLowerCase()).join('|')}`;
+/** `HDFC0000123`, `IDIB000B854` — the four-letter bank code that opens an IFSC. */
+const IFSC = /\b([A-Z]{4})0[A-Z0-9]{6}\b/;
+
+/**
+ * Fingerprints a statement's layout, so the same bank is recognised next time.
+ *
+ * Built from the issuing bank's IFSC prefix plus the shape of its table: the
+ * column count and which known header words appear. The key has to be
+ * computable *before* the model runs, which rules out keying on the header row
+ * the model identifies — hence recognising headings by vocabulary instead.
+ *
+ * Rows carrying a date or an amount are skipped: those are transactions, and
+ * letting their narration in would give two statements from the same account
+ * different keys.
+ */
+export function layoutFingerprint(grid: Grid, statementText = ''): string {
+  const ifsc = statementText.match(IFSC);
+
+  const words = new Set<string>();
+  for (const row of grid.rows) {
+    const cells = row.cells.map((c) => c.trim()).filter((c) => c !== '');
+    if (cells.length < 3) continue;
+
+    // Skip transaction rows; only headings should shape the key.
+    if (cells.some((c) => isDateLike(c) || isAmountLike(c))) continue;
+
+    for (const cell of cells) {
+      if (cell.length > 32) continue;
+      const tokens = cell.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+      if (tokens.some((t) => HEADER_WORDS.has(t))) words.add(tokens.join(' '));
+    }
+  }
+
+  const signature = [ifsc?.[1] ?? 'unknown', grid.columnCount, [...words].sort().join('|')].join(':');
   return createHash('sha256').update(signature).digest('hex').slice(0, 32);
 }
 
+/**
+ * Turns the model's column indices into the header labels printed above them.
+ *
+ * Storing labels rather than indices means a learned layout is resolved by the
+ * same header matching a hand-written template uses, so it still works when a
+ * later statement lays its columns out slightly differently. Returns null if the
+ * header row does not actually carry a label for a required field.
+ */
+export function toStoredTemplate(mapping: InferredMapping, grid: Grid, key: string): StoredTemplate | null {
+  const header = grid.rows[mapping.headerRowIndex];
+  if (!header) return null;
+
+  const label = (index: number | null): string | undefined => {
+    if (index === null) return undefined;
+    const cell = (header.cells[index] ?? '').trim();
+    return cell === '' ? undefined : cell;
+  };
+
+  const { columns } = mapping;
+  const date = label(columns.date);
+  const narration = label(columns.narration);
+  const balance = label(columns.balance);
+  if (!date || !narration || !balance) return null;
+
+  return {
+    key,
+    bankName: mapping.bankName,
+    dateFormats: [mapping.dateFormat],
+    amountStyle: mapping.amountStyle,
+    columns: {
+      date,
+      narration,
+      balance,
+      ...optionalLabel('valueDate', label(columns.valueDate)),
+      ...optionalLabel('refNo', label(columns.refNo)),
+      ...optionalLabel('debit', label(columns.debit)),
+      ...optionalLabel('credit', label(columns.credit)),
+      ...optionalLabel('amount', label(columns.amount)),
+      ...optionalLabel('drCrFlag', label(columns.drCrFlag)),
+    },
+    learnedAt: new Date().toISOString(),
+    timesUsed: 1,
+  };
+}
+
+function optionalLabel(field: string, value: string | undefined): Record<string, string> {
+  return value ? { [field]: value } : {};
+}
+
 export async function inferColumnMapping(grid: Grid, firstPageText: string): Promise<InferenceResult> {
-  const fingerprint = layoutFingerprint(grid);
-  const cached = MAPPING_CACHE.get(fingerprint);
-  if (cached) {
-    return {
-      template: toTemplate(cached, fingerprint),
-      headerRowIndex: cached.headerRowIndex,
-      notices: ['Column mapping reused from an identical layout seen earlier in this session.'],
-    };
-  }
+  const fingerprint = layoutFingerprint(grid, firstPageText);
 
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new ConvertError(
@@ -131,11 +214,12 @@ export async function inferColumnMapping(grid: Grid, firstPageText: string): Pro
   }
 
   assertUsableMapping(mapping);
-  MAPPING_CACHE.set(fingerprint, mapping);
 
   return {
     template: toTemplate(mapping, fingerprint),
     headerRowIndex: mapping.headerRowIndex,
+    fingerprint,
+    mapping,
     notices: [
       `No built-in template matched, so the column mapping was inferred with AI and then parsed deterministically. Detected layout: ${mapping.bankName}.`,
     ],
@@ -197,7 +281,3 @@ function toTemplate(mapping: InferredMapping, fingerprint: string): BankTemplate
   };
 }
 
-/** Exposed for tests. */
-export function __clearMappingCache(): void {
-  MAPPING_CACHE.clear();
-}

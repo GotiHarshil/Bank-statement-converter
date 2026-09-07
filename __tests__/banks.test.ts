@@ -52,6 +52,12 @@ function squash(text: string): string {
   return text.replace(/\s+/g, '');
 }
 
+/** Some banks print no reference column at all; the id lives in the narration. */
+function printsReference(id: string): boolean {
+  const spec = FIXTURE_SPECS.find((s) => s.id === id)!;
+  return spec.columns.some((c) => /ref|chq|cheque|instrument/i.test(c.label));
+}
+
 describe.each(FIXTURE_SPECS.map((spec) => [spec.id, spec.bankName] as const))(
   '%s (%s)',
   (id, bankName) => {
@@ -79,7 +85,11 @@ describe.each(FIXTURE_SPECS.map((spec) => [spec.id, spec.bankName] as const))(
           expect(actual.valueDate, `${where} value date`).toBe(expected.valueDate);
         }
 
-        if (actual.refNo !== undefined) {
+        if (!printsReference(id)) {
+          // The statement has no reference column, so the narration stands alone.
+          expect(actual.refNo, `${where} ref`).toBeUndefined();
+          expect(squash(actual.narration), `${where} narration`).toBe(squash(expected.narration));
+        } else if (actual.refNo !== undefined) {
           expect(actual.refNo, `${where} ref`).toBe(expected.refNo);
           expect(squash(actual.narration), `${where} narration`).toBe(squash(expected.narration));
         } else {

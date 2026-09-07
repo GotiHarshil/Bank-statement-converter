@@ -137,6 +137,8 @@ export function formatDate(iso: string, format: string): string {
       return `${d}-${monthName}-${y}`;
     case 'dd MMM yyyy':
       return `${d} ${monthName} ${y}`;
+    case 'MMM dd yyyy':
+      return `${monthName} ${d} ${y}`;
     case 'dd-MMM-yy':
       return `${d}-${monthName}-${y!.slice(2)}`;
     default:

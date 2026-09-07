@@ -355,4 +355,36 @@ export const FIXTURE_SPECS: FixtureSpec[] = [
     ],
     footer: commonFooter,
   },
+  {
+    // Indian Bank prefixes every figure with "INR" and dates them "Aug 01 2026".
+    // Its cash-credit statements additionally suffix each balance with DR; that
+    // sign handling is covered by unit tests rather than here, because a fixture
+    // cannot express a value wrapping onto a second line.
+    id: 'indian-bank-v1',
+    bankName: 'Indian Bank',
+    dateFormat: 'MMM dd yyyy',
+    amountStyle: 'separate-dr-cr',
+    columns: [
+      L('Date', 32, 64),
+      L('Transaction Details', 100, 200),
+      R('Debits', 306, 78),
+      R('Credits', 390, 78),
+      R('Balance', 474, 88),
+    ],
+    headerLines: [
+      'ACCOUNT STATEMENT',
+      NAME_LINE,
+      ACCOUNT_LINE.replace('{IFSC}', 'IDIB000B854'),
+      'For period: 01 Apr 2024 - 30 Jun 2024',
+    ],
+    subHeader: 'ACCOUNT ACTIVITY (continued)',
+    row: (e, _i, f) => [
+      formatDate(e.date, f),
+      e.narration,
+      e.debit === null ? '' : `INR ${inr(e.debit)}`,
+      e.credit === null ? '' : `INR ${inr(e.credit)}`,
+      `INR ${inr(e.balance)}`,
+    ],
+    footer: commonFooter,
+  },
 ];

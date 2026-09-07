@@ -23,6 +23,7 @@
     "@radix-ui/react-select": "^2.3.7",
     "@radix-ui/react-slot": "^1.3.3",
     "@tanstack/react-table": "^8.21.3",
+    "@upstash/redis": "^1.38.4",
     "ai": "^7.0.77",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

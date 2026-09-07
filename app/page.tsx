@@ -5,6 +5,7 @@ import { FileSpreadsheet, Landmark, ScanLine, ShieldCheck } from 'lucide-react';
 import { ProcessingPanel } from '@/components/ProcessingPanel';
 import { ReviewPanel } from '@/components/ReviewPanel';
 import { UploadPanel, type UploadSubmission } from '@/components/UploadPanel';
+import { BANK_TEMPLATES } from '@/lib/banks/registry';
 import { cn } from '@/lib/utils';
 import type { ConvertProgress } from '@/lib/convert';
 import type { ConvertErrorCode, ConvertSuccessBody } from '@/lib/schema';
@@ -91,7 +92,7 @@ export default function Page() {
             <div className="mb-10 text-center">
               <span className="border-border bg-card text-muted-foreground mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-sm">
                 <Landmark className="text-primary size-3.5" />
-                10 Indian banks supported out of the box
+                {BANK_TEMPLATES.length} Indian banks supported out of the box, and it learns new ones
               </span>
               <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
                 Bank statements in,

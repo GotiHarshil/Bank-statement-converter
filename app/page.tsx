@@ -25,7 +25,9 @@ export default function Page() {
     form.set('file', submission.file);
     if (submission.password) form.set('password', submission.password);
     if (submission.bankHint) form.set('bankHint', submission.bankHint);
-    form.set('allowLlmFallback', String(submission.allowLlmFallback));
+    // No built-in or previously learned template covers every bank, so the AI
+    // column-mapping fallback is always available rather than opt-in.
+    form.set('allowLlmFallback', 'true');
 
     try {
       const response = await fetch('/api/convert', { method: 'POST', body: form });

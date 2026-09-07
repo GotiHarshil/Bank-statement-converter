@@ -20,9 +20,9 @@ export interface ConvertOptions {
   /** Template id chosen by the user in the bank-hint dropdown. */
   bankHint?: string;
   /**
-   * Whether the statement may be sent to the LLM when no template matches.
-   * Off unless the user ticked the consent box — this transmits financial data
-   * to a third party.
+   * Whether the statement may be sent to the LLM when no shipped or learned
+   * template matches. The web UI always enables this; callers that must not
+   * transmit statement data to a third party can still set this to `false`.
    */
   allowLlmFallback?: boolean;
   onProgress?: (progress: ConvertProgress) => void;

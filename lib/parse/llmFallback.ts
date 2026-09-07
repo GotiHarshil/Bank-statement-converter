@@ -21,9 +21,8 @@ import type { StoredTemplate } from '@/lib/banks/learned/store';
  * page images — which keeps the payload small and the task narrow.
  *
  * Provider: Google Gemini, direct (not the Vercel AI Gateway). Swapping to a
- * different provider means changing the `model`/`google` import here and the
- * consent copy in components/UploadPanel.tsx — nothing else in the pipeline
- * depends on which provider answers this call.
+ * different provider means changing the `model`/`google` import here — nothing
+ * else in the pipeline depends on which provider answers this call.
  */
 
 const MODEL = 'gemini-3.7-flash';

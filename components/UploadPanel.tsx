@@ -6,7 +6,6 @@ import { BANK_TEMPLATES } from '@/lib/banks/registry';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,7 +21,6 @@ export interface UploadSubmission {
   bankHint?: string;
   /** Ledger code written into the accounting-import export, e.g. AXISBB. */
   bankCode?: string;
-  allowLlmFallback: boolean;
 }
 
 interface UploadPanelProps {
@@ -37,14 +35,12 @@ export function UploadPanel({ onSubmit, errorCode, errorMessage }: UploadPanelPr
   const [password, setPassword] = React.useState('');
   const [bankHint, setBankHint] = React.useState<string>(AUTO_DETECT);
   const [bankCode, setBankCode] = React.useState('');
-  const [allowLlmFallback, setAllowLlmFallback] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const needsPassword = errorCode === 'PASSWORD_REQUIRED' || errorCode === 'PASSWORD_INCORRECT';
-  const suggestsLlm = errorCode === 'UNSUPPORTED_LAYOUT' || errorCode === 'PARSE_FAILED';
 
   // Surface the password field and focus it the moment we learn the PDF is encrypted.
   const passwordRef = React.useRef<HTMLInputElement>(null);
@@ -81,7 +77,6 @@ export function UploadPanel({ onSubmit, errorCode, errorMessage }: UploadPanelPr
       ...(password ? { password } : {}),
       ...(bankHint !== AUTO_DETECT ? { bankHint } : {}),
       ...(bankCode.trim() ? { bankCode: bankCode.trim() } : {}),
-      allowLlmFallback,
     });
   }
 
@@ -224,25 +219,6 @@ export function UploadPanel({ onSubmit, errorCode, errorMessage }: UploadPanelPr
                   </p>
                 </div>
               </div>
-
-              <div className="bg-muted/50 flex items-start gap-3 rounded-lg border p-3.5">
-                <Checkbox
-                  id="llm-consent"
-                  checked={allowLlmFallback}
-                  onCheckedChange={(v) => setAllowLlmFallback(v === true)}
-                  className="mt-0.5"
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="llm-consent" className="cursor-pointer">
-                    Allow AI-assisted column mapping if no built-in template matches
-                  </Label>
-                  <p className="text-muted-foreground text-xs">
-                    This sends the statement&rsquo;s table — including narrations and amounts — to Google (Gemini) to
-                    work out which column is which. The amounts themselves are always read by this app, never by the
-                    AI. Leave this off and unrecognised statements will simply fail instead.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </CardContent>
@@ -263,12 +239,6 @@ export function UploadPanel({ onSubmit, errorCode, errorMessage }: UploadPanelPr
           <div>
             <AlertTitle>{titleFor(errorCode, localError)}</AlertTitle>
             <AlertDescription>{localError ?? errorMessage}</AlertDescription>
-            {suggestsLlm && !allowLlmFallback && (
-              <AlertDescription className="mt-2">
-                Open &ldquo;Password, bank &amp; accounting options&rdquo; above, tick AI-assisted mapping, and try
-                again.
-              </AlertDescription>
-            )}
           </div>
         </Alert>
       )}

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InMemoryTemplateStore } from '@/lib/banks/learned/memory';
 import { hydrateTemplate, setTemplateStore } from '@/lib/banks/learned/hydrate';
+import { LEARNED_TEMPLATE_HINT_PREFIX } from '@/lib/banks/available';
 import type { StoredTemplate } from '@/lib/banks/learned/store';
 import { applyTemplate } from '@/lib/parse/applyTemplate';
 import { layoutFingerprint, toStoredTemplate } from '@/lib/parse/llmFallback';
@@ -301,5 +302,75 @@ describe('end to end through convertStatement', () => {
 
     await expect(convertStatement(fixture(), { allowLlmFallback: false })).rejects.toThrow();
     expect(await store.get(stale.key)).toBeNull();
+  });
+});
+
+/**
+ * Selecting a learned bank from the dropdown has to actually do something.
+ * Learned templates are matched automatically by layout fingerprint, entirely
+ * independent of any hint — so without this, picking one from the dropdown
+ * would silently do nothing whenever this particular statement's fingerprint
+ * doesn't happen to match, which is a confusing gap for a real, functional
+ * `<Select>` to have.
+ */
+describe('selecting a learned bank by hint', () => {
+  const fixture = () =>
+    new Uint8Array(readFileSync(join(process.cwd(), '__tests__', 'fixtures', 'hdfc-savings-v1.pdf')));
+
+  // The real HDFC column layout, correct for the fixture used below.
+  const CORRECT_HDFC: StoredTemplate = {
+    key: 'hdfc-key',
+    bankName: 'HDFC Bank (learned)',
+    dateFormats: ['dd/MM/yy'],
+    amountStyle: 'separate-dr-cr',
+    columns: { date: 'Date', narration: 'Narration', refNo: 'Chq./Ref.No.', debit: 'Withdrawal Amt.', credit: 'Deposit Amt.', balance: 'Closing Balance' },
+    learnedAt: new Date().toISOString(),
+    timesUsed: 1,
+  };
+
+  it('uses the hinted layout directly, bypassing detection entirely', async () => {
+    const { convertStatement } = await import('@/lib/convert');
+    await store.put(CORRECT_HDFC);
+
+    const result = await convertStatement(fixture(), {
+      bankHint: `${LEARNED_TEMPLATE_HINT_PREFIX}hdfc-key`,
+      allowLlmFallback: false,
+    });
+
+    expect(result.validation.ok).toBe(true);
+    expect(result.meta.bankName).toBe('HDFC Bank (learned)');
+    expect(result.notices.join(' ')).toContain('you selected');
+
+    const updated = await store.get('hdfc-key');
+    expect(updated!.timesUsed).toBe(2);
+  });
+
+  it('falls through to ordinary detection when the hinted key does not exist', async () => {
+    const { convertStatement } = await import('@/lib/convert');
+    // No matching learned entry in the store at all.
+    const result = await convertStatement(fixture(), {
+      bankHint: `${LEARNED_TEMPLATE_HINT_PREFIX}does-not-exist`,
+      allowLlmFallback: false,
+    });
+
+    expect(result.validation.ok).toBe(true);
+    expect(result.meta.templateId).toBe('hdfc-savings-v1');
+    expect(result.notices.join(' ')).not.toContain('you selected');
+  });
+
+  it('falls through to ordinary detection when the hinted layout does not reconcile here', async () => {
+    const { convertStatement } = await import('@/lib/convert');
+    // Debit and credit swapped: applies, but breaks the balance chain on this statement.
+    await store.put({ ...CORRECT_HDFC, key: 'wrong-hdfc', columns: { ...CORRECT_HDFC.columns, debit: 'Deposit Amt.', credit: 'Withdrawal Amt.' } });
+
+    const result = await convertStatement(fixture(), {
+      bankHint: `${LEARNED_TEMPLATE_HINT_PREFIX}wrong-hdfc`,
+      allowLlmFallback: false,
+    });
+
+    // Recovers via the shipped template instead of returning the broken parse.
+    expect(result.validation.ok).toBe(true);
+    expect(result.meta.templateId).toBe('hdfc-savings-v1');
+    expect(result.notices.join(' ')).not.toContain('you selected');
   });
 });

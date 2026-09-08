@@ -6,9 +6,14 @@ import { ProcessingPanel } from '@/components/ProcessingPanel';
 import { ReviewPanel } from '@/components/ReviewPanel';
 import { UploadPanel, type UploadSubmission } from '@/components/UploadPanel';
 import { BANK_TEMPLATES } from '@/lib/banks/registry';
+import type { BankOption } from '@/lib/banks/available';
+import type { BanksResponse } from '@/app/api/banks/route';
 import { cn } from '@/lib/utils';
 import type { ConvertProgress } from '@/lib/convert';
 import type { ConvertErrorCode, ConvertSuccessBody } from '@/lib/schema';
+
+/** Shipped banks only — the correct list until `/api/banks` answers, and a safe fallback if it never does. */
+const SHIPPED_BANKS: BankOption[] = BANK_TEMPLATES.map((t) => ({ id: t.id, bankName: t.bankName, source: 'builtin' }));
 
 type Stage =
   | { name: 'upload'; errorCode?: ConvertErrorCode; errorMessage?: string }
@@ -17,6 +22,23 @@ type Stage =
 
 export default function Page() {
   const [stage, setStage] = React.useState<Stage>({ name: 'upload' });
+  const [banks, setBanks] = React.useState<BankOption[]>(SHIPPED_BANKS);
+
+  // Picks up any banks the app has learned since this page loaded, in
+  // addition to the 12 shipped ones. Failure just keeps the shipped list —
+  // this is a nice-to-have, never something the core flow depends on.
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch('/api/banks')
+      .then((res) => (res.ok ? (res.json() as Promise<BanksResponse>) : null))
+      .then((data) => {
+        if (!cancelled && data) setBanks(data.banks);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function convert(submission: UploadSubmission) {
     setStage({ name: 'processing', fileName: submission.file.name, progress: null });
@@ -94,7 +116,7 @@ export default function Page() {
             <div className="mb-10 text-center">
               <span className="border-border bg-card text-muted-foreground mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-sm">
                 <Landmark className="text-primary size-3.5" />
-                {BANK_TEMPLATES.length} Indian banks supported out of the box, and it learns new ones
+                {banks.length} Indian banks supported, and it learns new ones
               </span>
               <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
                 Bank statements in,
@@ -108,6 +130,7 @@ export default function Page() {
 
             <UploadPanel
               onSubmit={convert}
+              banks={banks}
               {...(stage.errorCode ? { errorCode: stage.errorCode } : {})}
               {...(stage.errorMessage ? { errorMessage: stage.errorMessage } : {})}
             />

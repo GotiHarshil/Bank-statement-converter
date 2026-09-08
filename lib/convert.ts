@@ -1,4 +1,5 @@
 import { detectTemplate } from '@/lib/banks/registry';
+import { LEARNED_TEMPLATE_HINT_PREFIX } from '@/lib/banks/available';
 import { applyTemplate, type ApplyResult } from '@/lib/parse/applyTemplate';
 import { inferColumnMapping, layoutFingerprint, toStoredTemplate } from '@/lib/parse/llmFallback';
 import { hydrateTemplate, templateStore } from '@/lib/banks/learned/hydrate';
@@ -47,6 +48,43 @@ export async function convertStatement(bytes: Uint8Array, options: ConvertOption
   const allText = doc.pages.map(pageToText).join('\n');
 
   const notices: string[] = [];
+  const store = templateStore();
+
+  // A hint pointing at a specific learned layout is an explicit, deliberate
+  // choice — the same override tier a shipped-template hint already gets via
+  // `detectTemplate`'s `findById` bypass, just for the learned side. Checked
+  // first, ahead of shipped-template detection, for the same reason: the user
+  // picked this bank on purpose.
+  if (options.bankHint?.startsWith(LEARNED_TEMPLATE_HINT_PREFIX)) {
+    const hinted = await store.get(options.bankHint.slice(LEARNED_TEMPLATE_HINT_PREFIX.length)).catch(() => null);
+
+    if (hinted) {
+      report({ stage: 'parsing', bankName: hinted.bankName });
+      const result = applyTemplate(grid, hydrateTemplate(hinted), allText);
+
+      if (result) {
+        report({ stage: 'validating' });
+        const validation = validate(result.transactions, summaryOf(result));
+
+        if (validation.ok) {
+          void store.put({ ...hinted, timesUsed: hinted.timesUsed + 1 }).catch(() => undefined);
+
+          return {
+            ok: true,
+            transactions: result.transactions,
+            meta: { ...result.meta, parsedBy: 'template', pageCount: doc.numPages },
+            validation,
+            notices: [...notices, ...result.notices, `Parsed using the "${hinted.bankName}" layout you selected — no AI was used.`],
+          };
+        }
+      }
+    }
+
+    // The hint didn't apply to this statement — a stale selection, or genuinely
+    // the wrong bank. Fall through to the normal flow exactly as if no hint had
+    // been given, rather than returning a mapping that doesn't actually fit.
+  }
+
   const detected = detectTemplate(doc.firstPageText, options.bankHint);
 
   if (detected) {
@@ -79,7 +117,6 @@ export async function convertStatement(bytes: Uint8Array, options: ConvertOption
   // A layout learned from an earlier statement is reused deterministically: no
   // model call, no data leaving the server, so no consent needed either.
   const fingerprint = layoutFingerprint(grid, doc.firstPageText);
-  const store = templateStore();
   const learned = await store.get(fingerprint).catch(() => null);
 
   if (learned) {

@@ -90,9 +90,9 @@ An unrecognised statement can be mapped once by AI and then handled deterministi
 ```
 detect()  →  a shipped template matches            → parse → validate → done
    ↓ no match
-learned layout for this fingerprint?  →  hit       → parse → validate → done (no AI, no consent)
+learned layout for this fingerprint?  →  hit       → parse → validate → done (no AI)
    ↓ miss
-AI-assisted mapping (opt-in)                       → parse → validate
+AI-assisted mapping                                → parse → validate
                                                        ├─ reconciles → remember it
                                                        └─ fails      → return for review, remember nothing
 ```
@@ -110,7 +110,18 @@ Three properties make this safe to rely on:
   number is written to the store; header text is generic table headings. A stored layout that stops
   reconciling is evicted and re-learned.
 
-A learned hit needs no AI consent — nothing leaves the server on that path.
+A learned hit needs no AI call — nothing leaves the server on that path.
+
+**Learned banks are visible, not just usable.** `GET /api/banks` (`app/api/banks/route.ts`,
+`lib/banks/available.ts`) merges the shipped templates with everything the store has learned, and
+the upload page's hero count and bank-hint dropdown read from it instead of the shipped list alone.
+Selecting a learned bank from the dropdown isn't cosmetic either: `lib/convert.ts` recognises a
+`learned:<fingerprint>` hint and uses that exact stored layout directly (bypassing the automatic
+fingerprint lookup and shipped detection), the same override tier a shipped template's hint already
+gets — falling through to the ordinary flow if the hint is stale or doesn't reconcile against this
+particular statement. Because `StoredTemplate.bankName` is free text from the model with no
+canonicalisation, `mergeAvailableBanks` dedupes by normalised name so the same real bank learned
+twice — or under a name that happens to match a shipped template — never appears twice.
 
 ## Adding a new bank
 

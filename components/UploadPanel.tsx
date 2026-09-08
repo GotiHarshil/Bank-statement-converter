@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ChevronDown, FileText, Lock, ShieldAlert, Upload } from 'lucide-react';
-import { BANK_TEMPLATES } from '@/lib/banks/registry';
+import type { BankOption } from '@/lib/banks/available';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -25,12 +25,14 @@ export interface UploadSubmission {
 
 interface UploadPanelProps {
   onSubmit: (submission: UploadSubmission) => void;
+  /** Shipped banks plus any the app has learned since the page loaded. */
+  banks: BankOption[];
   /** Set when a previous attempt failed, so the form can prompt inline. */
   errorCode?: ConvertErrorCode;
   errorMessage?: string;
 }
 
-export function UploadPanel({ onSubmit, errorCode, errorMessage }: UploadPanelProps) {
+export function UploadPanel({ onSubmit, banks, errorCode, errorMessage }: UploadPanelProps) {
   const [file, setFile] = React.useState<File | null>(null);
   const [password, setPassword] = React.useState('');
   const [bankHint, setBankHint] = React.useState<string>(AUTO_DETECT);
@@ -190,9 +192,10 @@ export function UploadPanel({ onSubmit, errorCode, errorMessage }: UploadPanelPr
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={AUTO_DETECT}>Detect automatically</SelectItem>
-                      {BANK_TEMPLATES.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.bankName}
+                      {banks.map((bank) => (
+                        <SelectItem key={bank.id} value={bank.id}>
+                          {bank.bankName}
+                          {bank.source === 'learned' ? ' (Learned)' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>

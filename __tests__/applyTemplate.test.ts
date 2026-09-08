@@ -169,3 +169,88 @@ describe('cash-credit accounts with DR balances', () => {
     expect(report.summary.errorRows).toBe(0);
   });
 });
+
+/**
+ * Some banks — IndusInd's internet-banking export is one — print the most
+ * recent transaction first. Comparing each row against the one printed above
+ * it then breaks on every single row, with deltas that look nothing like a
+ * clean sign flip — easy to misread as a misassigned debit/credit column when
+ * every row in the review table is red. The fix reorders a statement whose
+ * dates are strictly non-increasing back to chronological order before
+ * validation ever runs.
+ */
+describe('a statement printed newest-first', () => {
+  it('is reordered so the running balance reconciles', async () => {
+    const { validate } = await import('@/lib/validate/reconcile');
+
+    // The same three transactions as the "0.00 in the unused column" fixture
+    // above, printed in reverse — newest first, oldest last.
+    const result = applyTemplate(
+      grid([
+        row(HEADER),
+        row(['03-04-2025', 'THIRD, NEWEST', '', '250.00', '1,250.00']),
+        row(['02-04-2025', 'SECOND', '100.00', '', '1,000.00']),
+        row(['01-04-2025', 'FIRST, OLDEST', '', '500.00', '1,100.00']),
+      ]),
+      TEMPLATE,
+      '',
+    );
+
+    const txns = result!.transactions;
+    expect(txns.map((t) => t.date)).toEqual(['2025-04-01', '2025-04-02', '2025-04-03']);
+    expect(txns.map((t) => t.serial)).toEqual([1, 2, 3]);
+    expect(txns.map((t) => t.narration)).toEqual(['FIRST, OLDEST', 'SECOND', 'THIRD, NEWEST']);
+
+    expect(result!.notices.join(' ')).toContain('newest-first');
+    expect(result!.meta.openingBalance).toBe(600); // 1,100 - 500 reversed out of the first transaction
+
+    const report = validate(txns, {
+      openingBalance: result!.meta.openingBalance,
+      closingBalance: result!.meta.closingBalance,
+    });
+    expect(report.ok).toBe(true);
+    expect(report.summary.errorRows).toBe(0);
+  });
+
+  it('leaves a genuinely scrambled order untouched', () => {
+    // Ascending, then a drop, then ascending again: not a clean reversal, so
+    // reordering would just hide whatever actually went wrong upstream.
+    const result = applyTemplate(
+      grid([
+        row(HEADER),
+        row(['01-04-2025', 'A', '', '100.00', '100.00']),
+        row(['05-04-2025', 'B', '', '50.00', '150.00']),
+        row(['03-04-2025', 'C', '', '25.00', '175.00']),
+      ]),
+      TEMPLATE,
+      '',
+    );
+
+    expect(result!.transactions.map((t) => t.date)).toEqual(['2025-04-01', '2025-04-05', '2025-04-03']);
+    expect(result!.notices.join(' ')).not.toContain('newest-first');
+  });
+
+  it('does not touch a statement with only one date, or already ascending', () => {
+    const sameDay = applyTemplate(
+      grid([
+        row(HEADER),
+        row(['01-04-2025', 'A', '', '100.00', '100.00']),
+        row(['01-04-2025', 'B', '', '50.00', '150.00']),
+      ]),
+      TEMPLATE,
+      '',
+    );
+    expect(sameDay!.notices.join(' ')).not.toContain('newest-first');
+
+    const ascending = applyTemplate(
+      grid([
+        row(HEADER),
+        row(['01-04-2025', 'A', '', '100.00', '100.00']),
+        row(['02-04-2025', 'B', '', '50.00', '150.00']),
+      ]),
+      TEMPLATE,
+      '',
+    );
+    expect(ascending!.notices.join(' ')).not.toContain('newest-first');
+  });
+});

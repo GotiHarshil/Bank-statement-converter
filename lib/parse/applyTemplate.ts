@@ -253,6 +253,8 @@ export function applyTemplate(
 
   if (transactions.length === 0) return null;
 
+  reorderIfPrintedNewestFirst(transactions, notices);
+
   // With no explicit brought-forward line, the opening balance is implied by
   // reversing the first transaction out of its own closing balance.
   if (openingBalance === null) {
@@ -274,6 +276,45 @@ export function applyTemplate(
     },
     notices,
   };
+}
+
+/**
+ * Detects a statement printed newest-first and puts it back in chronological
+ * order.
+ *
+ * The running-balance check assumes each row's balance follows from the one
+ * printed above it. Some banks — IndusInd's internet-banking export is one —
+ * print the most recent transaction first instead, which makes every single
+ * row fail to reconcile with inconsistent-looking deltas. At a glance that
+ * reads exactly like a misassigned debit/credit column; it is really just the
+ * whole statement run through the chain backwards.
+ *
+ * Deliberately narrow: only a statement whose dates are *strictly*
+ * non-increasing (ties allowed, for same-day entries) is reordered. A
+ * genuinely scrambled statement — a mix of ascending and descending steps,
+ * which usually means a real merge or extraction bug — is left exactly as
+ * parsed, so the per-row reconciliation errors still point at the real
+ * problem instead of being silently papered over.
+ */
+function reorderIfPrintedNewestFirst(transactions: Transaction[], notices: string[]): void {
+  let ascending = 0;
+  let descending = 0;
+
+  for (let i = 1; i < transactions.length; i++) {
+    if (transactions[i]!.date > transactions[i - 1]!.date) ascending++;
+    else if (transactions[i]!.date < transactions[i - 1]!.date) descending++;
+  }
+
+  if (descending === 0 || ascending > 0) return;
+
+  transactions.reverse();
+  transactions.forEach((t, i) => {
+    t.serial = i + 1;
+  });
+
+  notices.push(
+    'This statement lists transactions newest-first; they have been reordered oldest-first so the running balance and totals read top-to-bottom.',
+  );
 }
 
 interface Movement {

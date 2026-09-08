@@ -46,7 +46,7 @@ disqualifying.
 | 1. Extract | `lib/pdf/extract.ts` | PDF → positioned text items (`{str, x, y, width, height, fontSize}`), one array per page. Detects encryption and scans. |
 | 2. Reconstruct | `lib/pdf/grid.ts` | Cluster items into rows by baseline, detect column boundaries, emit a `Grid`. |
 | 3. Detect | `lib/banks/registry.ts` | Run every template's `detect()`; the highest confidence above 0.7 wins. Failing that, look up a layout learned from an earlier statement. |
-| 4. Parse | `lib/parse/applyTemplate.ts` | Fold wrapped narration, then read each field with `parseDate` / `parseAmount`. |
+| 4. Parse | `lib/parse/applyTemplate.ts` | Fold wrapped narration, read each field with `parseDate` / `parseAmount`, then reorder to chronological if the statement printed newest-first. |
 | 5. Validate | `lib/validate/reconcile.ts` | Running balance, footer reconciliation, date order, completeness. |
 | 6. Export | `lib/export/*` | XLSX (frozen header, real dates, `#,##,##0.00`, summary sheet), CSV, and an accounting-import CSV. |
 
